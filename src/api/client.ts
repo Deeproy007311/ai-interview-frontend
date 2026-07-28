@@ -45,7 +45,10 @@ apiClient.interceptors.response.use(
         clearTimeout(config?.__wakeUpTimer)
         useUIStore.getState().setServerWakingUp(false)
 
-        if (error.response?.status === 401) {
+        const isAuthEndpoint =
+            config?.url?.includes('/api/users/login') || config?.url?.includes('/api/users/register')
+
+        if (error.response?.status === 401 && !isAuthEndpoint) {
             useAuthStore.getState().logout()
             window.location.href = '/login'
         }
