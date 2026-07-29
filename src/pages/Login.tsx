@@ -22,7 +22,7 @@ export default function Login() {
         loginMutation.mutate(values, {
             onSuccess: () => {
                 toast.success('Welcome back!')
-                navigate('/dashboard')
+                navigate('/')
             },
             onError: (err) => {
                 toast.error(getErrorMessage(err))

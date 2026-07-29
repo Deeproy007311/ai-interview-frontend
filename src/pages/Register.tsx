@@ -22,7 +22,7 @@ export default function Register() {
         registerMutation.mutate(values, {
             onSuccess: () => {
                 toast.success('Account created!')
-                navigate('/dashboard')
+                navigate('/')
             },
             onError: (err) => {
                 toast.error(getErrorMessage(err))

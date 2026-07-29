@@ -74,3 +74,18 @@ export function useGenerateReport() {
         },
     })
 }
+
+// The report endpoint is a POST, but the backend guarantees it's
+// idempotent — repeat calls just return the same saved report rather than
+// regenerating it. That makes it safe to treat as a plain "fetch" here via
+// useQuery, which gives this page normal loading/error/caching behavior
+// instead of needing to manually trigger + track a mutation on mount.
+// `enabled` is driven by the caller so this never fires before the
+// interview is confirmed `completed`.
+export function useReport(id: string | undefined, enabled: boolean) {
+    return useQuery({
+        queryKey: ['interviews', id, 'report'],
+        queryFn: async () => (await generateReport(id!)).data,
+        enabled: !!id && enabled,
+    })
+}
