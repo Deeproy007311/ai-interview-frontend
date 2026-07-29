@@ -32,6 +32,15 @@ export default function InterviewSession() {
     const revealNextQuestion = useInterviewStore((s) => s.revealNextQuestion)
     const resetSession = useInterviewStore((s) => s.reset)
 
+    // True only when the persisted session store actually belongs to the
+    // interview currently on screen. Every effect below that acts on
+    // `phase` gates on this first — without it, a stale `phase: 'complete'`
+    // left over from a *previous* interview (persisted in localStorage)
+    // could briefly be read on the very first render of a new session and
+    // trigger actions (like generating a report) against the wrong
+    // interview before the reconciliation effect has caught up.
+    const sessionMatchesThisInterview = storedInterviewId === id && phase !== 'idle'
+
     const [voiceEnabled, setVoiceEnabled] = useState(true)
     const [subtitle, setSubtitle] = useState<{ kind: SubtitleKind; text: string }>({
         kind: null,
@@ -44,8 +53,6 @@ export default function InterviewSession() {
     const hasRequestedReportRef = useRef(false)
     const hasNarratedWelcomeRef = useRef(false)
     const narratedQuestionIdsRef = useRef<Set<string>>(new Set())
-
-    const sessionMatchesThisInterview = storedInterviewId === id && phase !== 'idle'
 
     // Reconcile persisted session against the current URL on mount / id change.
     useEffect(() => {
@@ -83,10 +90,10 @@ export default function InterviewSession() {
     }, [interview, id])
 
     // Narrates the welcome message (once) followed by each new question as it
-    // arrives. Real speech duration — or the neutral reading-time fallback —
-    // paces this naturally instead of a fixed timer.
+    // arrives. Guarded by `sessionMatchesThisInterview` so stale session data
+    // from a different interview can never trigger narration here.
     useEffect(() => {
-        if (phase !== 'active' || !currentQuestion) return
+        if (!sessionMatchesThisInterview || phase !== 'active' || !currentQuestion) return
         if (narratedQuestionIdsRef.current.has(currentQuestion.id)) return
         narratedQuestionIdsRef.current.add(currentQuestion.id)
 
@@ -102,12 +109,12 @@ export default function InterviewSession() {
             narration.narrate(currentQuestion.question, () => { })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [phase, currentQuestion?.id, welcomeMessage])
+    }, [sessionMatchesThisInterview, phase, currentQuestion?.id, welcomeMessage])
 
     // Narrates the transition line, then auto-advances once it's actually
-    // finished being said or read — not after an arbitrary short delay.
+    // finished being said or read. Same stale-session guard as above.
     useEffect(() => {
-        if (phase !== 'transitioning') return
+        if (!sessionMatchesThisInterview || phase !== 'transitioning') return
 
         if (!transitionMessage) {
             revealNextQuestion()
@@ -119,11 +126,18 @@ export default function InterviewSession() {
             revealNextQuestion()
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [phase, transitionMessage])
+    }, [sessionMatchesThisInterview, phase, transitionMessage])
 
     // Once complete, generate (or re-fetch) the report and move on.
+    // The `storedInterviewId === id` check is the fix for the bug where a
+    // stale `phase: 'complete'` left over from a *previous* interview could
+    // fire this against a brand-new interview before it had a chance to
+    // start — the backend correctly rejected it with a 400, which is what
+    // surfaced as the "report only available once completed" toast.
     useEffect(() => {
-        if (phase !== 'complete' || !id || hasRequestedReportRef.current) return
+        if (phase !== 'complete' || !id || storedInterviewId !== id || hasRequestedReportRef.current) {
+            return
+        }
         hasRequestedReportRef.current = true
         reportMutation.mutate(id, {
             onSuccess: () => {
@@ -136,7 +150,7 @@ export default function InterviewSession() {
             },
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [phase, id])
+    }, [phase, id, storedInterviewId])
 
     const {
         register,
@@ -155,12 +169,10 @@ export default function InterviewSession() {
 
     const speechRecognition = useSpeechRecognition({
         onResult: useCallback(
-            (chunk: string) => {
-                const current = getValues('transcript') || ''
-                const next = current ? `${current} ${chunk}` : chunk
-                setValue('transcript', next, { shouldValidate: true })
+            (text: string) => {
+                setValue('transcript', text, { shouldValidate: true })
             },
-            [getValues, setValue],
+            [setValue],
         ),
         onError: useCallback((message: string) => toast.error(message), []),
     })
@@ -189,7 +201,7 @@ export default function InterviewSession() {
         if (speechRecognition.isListening) {
             speechRecognition.stop()
         } else {
-            speechRecognition.start()
+            speechRecognition.start(getValues('transcript') || '')
         }
     }
 
