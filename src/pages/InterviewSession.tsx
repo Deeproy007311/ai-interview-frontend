@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import SessionHeader from '@/components/interview/SessionHeader'
@@ -11,6 +11,7 @@ import SessionLoadingState from '@/components/interview/SessionLoadingState'
 
 import { answerSchema, type AnswerFormValues } from '@/schemas/interview.schema'
 import { useInterview, useStartInterview, useSubmitAnswer, useGenerateReport } from '@/hooks/useInterview'
+import { useMe } from '@/hooks/useAuth'
 import { useInterviewStore } from '@/store/interviewStore'
 import { useUIStore } from '@/store/uiStore'
 import { useNarration } from '@/hooks/useNarration'
@@ -23,6 +24,7 @@ export default function InterviewSession() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const isServerWakingUp = useUIStore((s) => s.isServerWakingUp)
+    const { data: user } = useMe()
 
     const { data: interview, isLoading: interviewLoading, error: interviewError } = useInterview(id)
     const startMutation = useStartInterview()
@@ -44,10 +46,18 @@ export default function InterviewSession() {
     const sessionMatchesThisInterview = sessionBelongsHere && phase !== 'idle'
 
     const [voiceEnabled, setVoiceEnabled] = useState(true)
+    const [elapsedSeconds, setElapsedSeconds] = useState(0)
     const [subtitle, setSubtitle] = useState<{ kind: SubtitleKind; text: string }>({
         kind: null,
         text: '',
     })
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setElapsedSeconds((s) => s + 1)
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [])
 
     const narration = useNarration(voiceEnabled)
 
@@ -58,6 +68,16 @@ export default function InterviewSession() {
     const narratedQuestionIdsRef = useRef<Set<string>>(new Set())
     // Drives the error UI — set after startFailedRef so state update is for display only.
     const [startError, setStartError] = useState<string | null>(null)
+
+    const userInitials = user?.name
+        ? user.name
+              .split(' ')
+              .map((n) => n[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 2)
+        : 'DR'
+    const userName = user?.name || 'You'
 
     // Synchronously computed during render (same condition as the kick-off effect)
     // so the preparing screen shows immediately without waiting for the effect to run.
@@ -310,41 +330,80 @@ export default function InterviewSession() {
     const isAnswering = phase === 'active' && !!currentQuestion
 
     return (
-        <div className="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white">
-            {/* Header */}
-            <SessionHeader
-                currentQuestionNumber={currentQuestion?.questionNumber}
-                totalQuestions={totalQuestions}
-                section={currentQuestion?.section}
-                voiceEnabled={voiceEnabled}
-                isVoiceSupported={narration.isVoiceSupported}
-                onToggleVoice={() => setVoiceEnabled((v) => !v)}
-            />
-
-            {/* Split View Body */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Left: Interactive Human AI Interviewer Avatar & Closed Captions */}
-                <InterviewerAvatar
-                    isNarrating={narration.isNarrating}
-                    subtitle={subtitle}
-                    isTransitioning={isTransitioning}
-                    onSkip={() => narration.skip()}
-                    onReplay={handleReplayQuestion}
+        <div className="min-h-screen bg-[#f4f5f7] sm:py-5 sm:px-6 flex items-center justify-center font-sans text-slate-900 selection:bg-indigo-500 selection:text-white">
+            {/* Main Outer Container Frame */}
+            <div className="w-full max-w-7xl h-screen sm:h-[94vh] bg-white sm:rounded-3xl border border-slate-200/80 shadow-xl flex flex-col overflow-hidden relative">
+                {/* Header */}
+                <SessionHeader
+                    currentQuestionNumber={currentQuestion?.questionNumber}
+                    totalQuestions={totalQuestions}
+                    section={currentQuestion?.section}
+                    elapsedSeconds={elapsedSeconds}
                 />
 
-                {/* Right: Candidate Answer & Voice Mic Input Panel */}
-                <AnswerPanel
-                    isAnswering={isAnswering}
-                    isSubmitting={answerMutation.isPending}
-                    transcriptValue={transcriptValue}
-                    isListening={speechRecognition.isListening}
-                    isSpeechSupported={speechRecognition.isSupported}
-                    isServerWakingUp={isServerWakingUp}
-                    register={register}
-                    errors={errors}
-                    onToggleMic={toggleMic}
-                    onSubmit={handleSubmit(onSubmitAnswer)}
-                />
+                {/* Split View Body */}
+                <div className="flex-1 flex flex-col lg:flex-row p-4 sm:p-6 gap-5 overflow-y-auto lg:overflow-hidden min-h-0 bg-white">
+                    {/* Left: Interactive AI Interviewer Graphic & Teleprompter */}
+                    <InterviewerAvatar
+                        isNarrating={narration.isNarrating}
+                        subtitle={subtitle}
+                        isTransitioning={isTransitioning}
+                        onSkip={() => narration.skip()}
+                        onReplay={handleReplayQuestion}
+                    />
+
+                    {/* Right: Candidate Profile & Answer Panel */}
+                    <AnswerPanel
+                        isAnswering={isAnswering}
+                        isSubmitting={answerMutation.isPending}
+                        transcriptValue={transcriptValue}
+                        isListening={speechRecognition.isListening}
+                        isSpeechSupported={speechRecognition.isSupported}
+                        isServerWakingUp={isServerWakingUp}
+                        userName={userName}
+                        userInitials={userInitials}
+                        register={register}
+                        errors={errors}
+                        onToggleMic={toggleMic}
+                        onSubmit={handleSubmit(onSubmitAnswer)}
+                    />
+                </div>
+
+                {/* Bottom Actions Floating Controls Bar */}
+                <div className="py-3 px-6 bg-white border-t border-slate-100 flex items-center justify-center gap-3 shrink-0 select-none">
+                    {/* Audio Mute/Unmute Toggle */}
+                    <button
+                        type="button"
+                        onClick={() => setVoiceEnabled((v) => !v)}
+                        disabled={!narration.isVoiceSupported}
+                        title={voiceEnabled ? 'Mute AI Voice' : 'Unmute AI Voice'}
+                        className={`w-10 h-10 rounded-full border flex items-center justify-center text-sm transition-all shadow-xs active:scale-95 ${
+                            voiceEnabled
+                                ? 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                                : 'bg-slate-100 text-slate-400 border-slate-200'
+                        }`}
+                    >
+                        {voiceEnabled ? '🔊' : '🔇'}
+                    </button>
+
+                    {/* Subtitle / Repeat Question */}
+                    <button
+                        type="button"
+                        onClick={handleReplayQuestion}
+                        title="Repeat Question Audio"
+                        className="w-10 h-10 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center text-sm transition-all shadow-xs active:scale-95"
+                    >
+                        💬
+                    </button>
+
+                    {/* Leave Interview Button */}
+                    <Link
+                        to="/dashboard"
+                        className="inline-flex items-center justify-center px-4 py-2 text-xs sm:text-sm font-semibold text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 bg-white hover:bg-red-50 rounded-full shadow-xs transition-all active:scale-95 ml-2"
+                    >
+                        Leave interview
+                    </Link>
+                </div>
             </div>
         </div>
     )

@@ -8,6 +8,8 @@ interface AnswerPanelProps {
     isListening: boolean
     isSpeechSupported: boolean
     isServerWakingUp: boolean
+    userName?: string
+    userInitials?: string
     register: UseFormRegister<AnswerFormValues>
     errors: FieldErrors<AnswerFormValues>
     onToggleMic: () => void
@@ -21,120 +23,112 @@ export default function AnswerPanel({
     isListening,
     isSpeechSupported,
     isServerWakingUp,
+    userName = 'You',
+    userInitials = 'DR',
     register,
     errors,
     onToggleMic,
     onSubmit,
 }: AnswerPanelProps) {
     return (
-        <div className="flex w-full max-w-md shrink-0 flex-col border-l border-slate-200 bg-white p-6 text-slate-900 justify-between shadow-xs">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-                <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 font-bold text-sm">
-                        ✍️
+        <div className="w-full lg:w-[440px] xl:w-[480px] shrink-0 flex flex-col gap-4">
+            {/* Top Card: Candidate Profile Bar */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs tracking-wider border border-slate-300/60 shadow-xs">
+                        {userInitials}
                     </div>
-                    <h2 className="text-base font-bold text-slate-900">Your Answer</h2>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900 leading-tight">
+                            {userName}
+                        </h3>
+                        <p className="text-xs text-slate-500 font-medium">
+                            {isListening ? 'Mic active / recording' : 'Mic ready'}
+                        </p>
+                    </div>
                 </div>
-                <span className="text-xs font-mono text-slate-400 font-medium">
-                    {transcriptValue?.length ?? 0} / 5000 chars
-                </span>
+
+                <div className="text-slate-400 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 00-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                </div>
             </div>
 
-            {isServerWakingUp && (
-                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                    Waking up AI evaluation engine...
-                </div>
-            )}
-
-            {isAnswering ? (
-                <form onSubmit={onSubmit} className="flex flex-1 flex-col justify-between gap-4">
-                    {/* Speech / Text Transcript Input */}
-                    <div className="relative flex-1 flex flex-col">
-                        <textarea
-                            {...register('transcript')}
-                            rows={10}
-                            placeholder="Type your answer, or use the mic to speak aloud..."
-                            className="w-full flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:bg-white focus:ring-1 focus:ring-indigo-600 transition-all leading-relaxed"
-                        />
-
-                        {/* Mic Recording Banner */}
-                        {isListening && (
-                            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between rounded-xl bg-red-500 text-white border border-red-600 px-4 py-2 shadow-md">
-                                <div className="flex items-center gap-2">
-                                    <span className="flex h-3 w-3 rounded-full bg-white animate-ping" />
-                                    <span className="text-xs font-bold">Listening to microphone...</span>
-                                </div>
-                                <div className="flex items-end gap-1 h-4">
-                                    {[50, 90, 40, 100, 60, 80].map((h, i) => (
-                                        <div
-                                            key={i}
-                                            style={{ height: `${h}%` }}
-                                            className="w-1 bg-white rounded-full animate-pulse"
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {errors.transcript && (
-                        <p className="text-xs font-semibold text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">
-                            ⚠️ {errors.transcript.message}
-                        </p>
+            {/* Bottom Card: Answer Input Panel */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs flex-1 flex flex-col justify-between space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold text-slate-900">Your answer</h2>
+                    {isServerWakingUp && (
+                        <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                            Waking AI engine...
+                        </span>
                     )}
+                </div>
 
-                    {/* Mic & Submit Buttons */}
-                    <div className="space-y-3 pt-2">
-                        <div className="flex items-center justify-between gap-3">
-                            <button
-                                type="button"
-                                onClick={onToggleMic}
-                                disabled={!isSpeechSupported}
-                                title={
-                                    isSpeechSupported
-                                        ? 'Toggle Speech Recognition'
-                                        : 'Voice input is not supported in this browser'
-                                }
-                                className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-3 px-4 text-xs font-bold transition-all disabled:opacity-40 active:scale-[0.98] ${
-                                    isListening
-                                        ? 'bg-red-600 text-white shadow-md shadow-red-600/30 animate-pulse'
-                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-                                }`}
-                            >
-                                <span className="text-base">{isListening ? '⏹' : '🎙️'}</span>
-                                <span>{isListening ? 'Stop Mic Input' : 'Speak Answer'}</span>
-                            </button>
+                {isAnswering ? (
+                    <form onSubmit={onSubmit} className="flex-1 flex flex-col justify-between gap-3">
+                        {/* Speech / Text Area */}
+                        <div className="relative flex-1 flex flex-col">
+                            <textarea
+                                {...register('transcript')}
+                                rows={10}
+                                placeholder="Type, or tap the mic to speak..."
+                                className="w-full flex-1 min-h-[200px] sm:min-h-[260px] resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all leading-relaxed"
+                            />
+
+                            {/* Character Count & Mic Speak Button Inside Box Footer */}
+                            <div className="flex items-center justify-between pt-2 px-1 text-xs text-slate-500 font-medium">
+                                <span>{transcriptValue?.length ?? 0} / 5000</span>
+
+                                <button
+                                    type="button"
+                                    onClick={onToggleMic}
+                                    disabled={!isSpeechSupported}
+                                    title={
+                                        isSpeechSupported
+                                            ? 'Toggle Speech Recognition'
+                                            : 'Voice input is not supported in this browser'
+                                    }
+                                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-[0.98] disabled:opacity-40 ${
+                                        isListening
+                                            ? 'bg-red-500 text-white border-red-600 animate-pulse shadow-xs'
+                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    <span>🎙️</span>
+                                    <span>{isListening ? 'Stop' : 'Speak'}</span>
+                                </button>
+                            </div>
                         </div>
 
+                        {errors.transcript && (
+                            <p className="text-xs font-medium text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">
+                                ⚠️ {errors.transcript.message}
+                            </p>
+                        )}
+
+                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-600/25 transition-all hover:bg-indigo-700 disabled:opacity-50 active:scale-[0.98]"
+                            className="w-full rounded-xl bg-white border border-slate-300 py-3 text-sm font-bold text-slate-900 shadow-xs transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.99] disabled:opacity-50 mt-1"
                         >
-                            {isSubmitting ? 'Evaluating Response...' : 'Submit Answer →'}
+                            {isSubmitting ? 'Evaluating answer...' : 'Submit answer'}
                         </button>
+                    </form>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-2">
+                        <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 animate-pulse">
+                            ⏳
+                        </div>
+                        <p className="text-xs font-medium text-slate-500">
+                            Waiting for AI interviewer to finish question...
+                        </p>
                     </div>
-
-                    {/* Pro Tip */}
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-600 flex items-center gap-2">
-                        <span>💡</span>
-                        <span>
-                            <strong>Pro Tip:</strong> Clearly articulate your solution structure and trade-offs before submitting.
-                        </span>
-                    </div>
-                </form>
-            ) : (
-                <div className="flex flex-1 flex-col items-center justify-center text-center p-6 space-y-3">
-                    <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-lg animate-pulse">
-                        ⏳
-                    </div>
-                    <p className="text-sm font-medium text-slate-500">
-                        Waiting for AI interviewer to complete question...
-                    </p>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     )
 }
+
