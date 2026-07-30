@@ -6,6 +6,7 @@ interface AnswerPanelProps {
     isSubmitting: boolean
     transcriptValue: string
     isListening: boolean
+    isTranscribing?: boolean
     isSpeechSupported: boolean
     isServerWakingUp: boolean
     userName?: string
@@ -21,6 +22,7 @@ export default function AnswerPanel({
     isSubmitting,
     transcriptValue,
     isListening,
+    isTranscribing = false,
     isSpeechSupported,
     isServerWakingUp,
     userName = 'You',
@@ -43,7 +45,11 @@ export default function AnswerPanel({
                             {userName}
                         </h3>
                         <p className="text-xs text-slate-500 font-medium">
-                            {isListening ? 'Mic active / recording' : 'Mic ready'}
+                            {isListening
+                                ? 'Mic active / recording...'
+                                : isTranscribing
+                                    ? 'Transcribing audio...'
+                                    : 'Mic ready'}
                         </p>
                     </div>
                 </div>
@@ -84,20 +90,32 @@ export default function AnswerPanel({
                                 <button
                                     type="button"
                                     onClick={onToggleMic}
-                                    disabled={!isSpeechSupported}
+                                    disabled={!isSpeechSupported || isTranscribing}
                                     title={
-                                        isSpeechSupported
-                                            ? 'Toggle Speech Recognition'
-                                            : 'Voice input is not supported in this browser'
+                                        !isSpeechSupported
+                                            ? 'Voice input is not supported in this browser'
+                                            : isTranscribing
+                                                ? 'Transcribing audio...'
+                                                : isListening
+                                                    ? 'Stop recording'
+                                                    : 'Start voice input'
                                     }
                                     className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all active:scale-[0.98] disabled:opacity-40 ${
                                         isListening
                                             ? 'bg-red-500 text-white border-red-600 animate-pulse shadow-xs'
-                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                                            : isTranscribing
+                                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 animate-pulse'
+                                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                                     }`}
                                 >
-                                    <span>🎙️</span>
-                                    <span>{isListening ? 'Stop' : 'Speak'}</span>
+                                    <span>{isTranscribing ? '⏳' : '🎙️'}</span>
+                                    <span>
+                                        {isTranscribing
+                                            ? 'Transcribing...'
+                                            : isListening
+                                                ? 'Stop'
+                                                : 'Speak'}
+                                    </span>
                                 </button>
                             </div>
                         </div>

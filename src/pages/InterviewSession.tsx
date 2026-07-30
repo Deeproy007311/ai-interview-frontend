@@ -15,7 +15,7 @@ import { useMe } from '@/hooks/useAuth'
 import { useInterviewStore } from '@/store/interviewStore'
 import { useUIStore } from '@/store/uiStore'
 import { useNarration } from '@/hooks/useNarration'
-import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
+import { useAudioRecorder } from '@/hooks/useAudioRecorder'
 import { getErrorMessage } from '@/api/client'
 
 type SubtitleKind = 'welcome' | 'transition' | 'question' | null
@@ -223,26 +223,32 @@ export default function InterviewSession() {
 
     const transcriptValue = watch('transcript')
 
-    const speechRecognition = useSpeechRecognition({
-        onResult: useCallback(
+    const audioRecorder = useAudioRecorder({
+        onTranscribed: useCallback(
             (text: string) => {
-                setValue('transcript', text, { shouldValidate: true })
+                const current = getValues('transcript') || ''
+                const newText = text.trim()
+                if (!newText) return
+                const updated = current.trim() ? `${current.trim()} ${newText}` : newText
+                setValue('transcript', updated, { shouldValidate: true })
             },
-            [setValue],
+            [getValues, setValue],
         ),
         onError: useCallback((message: string) => toast.error(message), []),
     })
 
     // Stop mic when leaving active phase
     useEffect(() => {
-        if (phase !== 'active') {
-            speechRecognition.stop()
+        if (phase !== 'active' && audioRecorder.isRecording) {
+            audioRecorder.stop()
         }
-    }, [phase, speechRecognition])
+    }, [phase, audioRecorder])
 
     const onSubmitAnswer = (values: AnswerFormValues) => {
         if (!id || !currentQuestion) return
-        speechRecognition.stop()
+        if (audioRecorder.isRecording) {
+            audioRecorder.stop()
+        }
         answerMutation.mutate(
             { id, payload: { questionId: currentQuestion.id, transcript: values.transcript } },
             {
@@ -253,10 +259,10 @@ export default function InterviewSession() {
     }
 
     const toggleMic = () => {
-        if (speechRecognition.isListening) {
-            speechRecognition.stop()
+        if (audioRecorder.isRecording) {
+            audioRecorder.stop()
         } else {
-            speechRecognition.start(getValues('transcript') || '')
+            audioRecorder.start()
         }
     }
 
@@ -357,8 +363,9 @@ export default function InterviewSession() {
                         isAnswering={isAnswering}
                         isSubmitting={answerMutation.isPending}
                         transcriptValue={transcriptValue}
-                        isListening={speechRecognition.isListening}
-                        isSpeechSupported={speechRecognition.isSupported}
+                        isListening={audioRecorder.isRecording}
+                        isTranscribing={audioRecorder.isTranscribing}
+                        isSpeechSupported={audioRecorder.isSupported}
                         isServerWakingUp={isServerWakingUp}
                         userName={userName}
                         userInitials={userInitials}
