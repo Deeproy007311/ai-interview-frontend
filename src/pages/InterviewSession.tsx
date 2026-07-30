@@ -66,6 +66,7 @@ export default function InterviewSession() {
     const hasRequestedReportRef = useRef(false)
     const hasNarratedWelcomeRef = useRef(false)
     const narratedQuestionIdsRef = useRef<Set<string>>(new Set())
+    const narratedTransitionRef = useRef<string | null>(null)
     // Drives the error UI — set after startFailedRef so state update is for display only.
     const [startError, setStartError] = useState<string | null>(null)
 
@@ -103,6 +104,7 @@ export default function InterviewSession() {
             hasRequestedReportRef.current = false
             hasNarratedWelcomeRef.current = false
             narratedQuestionIdsRef.current = new Set()
+            narratedTransitionRef.current = null
         } else if (state.interviewId === id && state.phase !== 'idle') {
             // Resuming this exact interview — keep refs in sync so narration
             // doesn't replay the welcome message for already-seen questions
@@ -111,6 +113,7 @@ export default function InterviewSession() {
             hasRequestedReportRef.current = false
             hasNarratedWelcomeRef.current = true
             narratedQuestionIdsRef.current = new Set()
+            narratedTransitionRef.current = null
         } else {
             // Fresh start
             hasStartedRef.current = false
@@ -118,6 +121,7 @@ export default function InterviewSession() {
             hasRequestedReportRef.current = false
             hasNarratedWelcomeRef.current = false
             narratedQuestionIdsRef.current = new Set()
+            narratedTransitionRef.current = null
         }
     }, [id])
 
@@ -174,6 +178,13 @@ export default function InterviewSession() {
         }
     }, [sessionMatchesThisInterview, phase, currentQuestion, welcomeMessage, narration])
 
+    // Reset transition ref when leaving transitioning phase
+    useEffect(() => {
+        if (phase !== 'transitioning') {
+            narratedTransitionRef.current = null
+        }
+    }, [phase])
+
     // Narrate transition line & auto advance
     useEffect(() => {
         if (!sessionMatchesThisInterview || phase !== 'transitioning') return
@@ -182,6 +193,9 @@ export default function InterviewSession() {
             revealNextQuestion()
             return
         }
+
+        if (narratedTransitionRef.current === transitionMessage) return
+        narratedTransitionRef.current = transitionMessage
 
         setSubtitle({ kind: 'transition', text: transitionMessage })
         narration.narrate(transitionMessage, () => {

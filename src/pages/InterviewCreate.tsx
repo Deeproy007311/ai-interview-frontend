@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import axios from 'axios'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import Spinner from '@/components/ui/Spinner'
 import {
     createInterviewSchema,
     interviewModeValues,
@@ -313,9 +314,16 @@ export default function InterviewCreate() {
                         <button
                             type="submit"
                             disabled={createMutation.isPending}
-                            className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50 active:scale-[0.98]"
+                            className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all disabled:opacity-60 active:scale-[0.98] flex items-center justify-center gap-2"
                         >
-                            {createMutation.isPending ? 'Generating Interview Session...' : 'Create & Start Interview →'}
+                            {createMutation.isPending ? (
+                                <>
+                                    <Spinner size="sm" color="white" />
+                                    <span>Generating Interview...</span>
+                                </>
+                            ) : (
+                                'Create & Start Interview →'
+                            )}
                         </button>
                     </form>
 

@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { registerUser, loginUser, getMe, type RegisterPayload, type LoginPayload } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
+import { getErrorMessage } from '@/api/client'
 
 export function useRegister() {
     const setToken = useAuthStore((s) => s.setToken)
@@ -8,7 +10,11 @@ export function useRegister() {
     return useMutation({
         mutationFn: (payload: RegisterPayload) => registerUser(payload),
         onSuccess: (data) => {
+            toast.success('Account created successfully!')
             setToken(data.accessToken)
+        },
+        onError: (err) => {
+            toast.error(getErrorMessage(err))
         },
     })
 }
@@ -19,7 +25,11 @@ export function useLogin() {
     return useMutation({
         mutationFn: (payload: LoginPayload) => loginUser(payload),
         onSuccess: (data) => {
+            toast.success('Welcome back!')
             setToken(data.accessToken)
+        },
+        onError: (err) => {
+            toast.error(getErrorMessage(err))
         },
     })
 }

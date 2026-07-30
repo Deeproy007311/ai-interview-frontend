@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { useMyResume, useUploadResume } from '@/hooks/useResume'
 import { getErrorMessage } from '@/api/client'
+import Spinner from '@/components/ui/Spinner'
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024
 
@@ -136,13 +137,18 @@ export default function ResumeUpload() {
                         <button
                             onClick={handleUpload}
                             disabled={!selectedFile || uploadMutation.isPending}
-                            className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50 active:scale-[0.98]"
+                            className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all disabled:opacity-60 active:scale-[0.98] flex items-center justify-center gap-2"
                         >
-                            {uploadMutation.isPending
-                                ? 'Uploading & Parsing...'
-                                : resume
-                                ? 'Replace Existing Resume'
-                                : 'Upload Resume PDF'}
+                            {uploadMutation.isPending ? (
+                                <>
+                                    <Spinner size="sm" color="white" />
+                                    <span>Uploading & Parsing...</span>
+                                </>
+                            ) : resume ? (
+                                'Replace Existing Resume'
+                            ) : (
+                                'Upload Resume PDF'
+                            )}
                         </button>
                     </div>
 

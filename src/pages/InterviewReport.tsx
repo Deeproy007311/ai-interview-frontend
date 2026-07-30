@@ -3,6 +3,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { useInterview, useReport } from '@/hooks/useInterview'
 import { getErrorMessage } from '@/api/client'
+import Spinner from '@/components/ui/Spinner'
 
 function ScoreCard({ label, value, color }: { label: string; value: number; color?: string }) {
     const rounded = Math.round(value)
@@ -51,8 +52,9 @@ export default function InterviewReport() {
         return (
             <div className="min-h-screen flex flex-col bg-slate-50">
                 <Navbar />
-                <div className="flex-1 flex items-center justify-center">
-                    <p className="text-slate-500 font-medium">Loading evaluation scorecard...</p>
+                <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                    <Spinner size="lg" color="indigo" />
+                    <p className="text-slate-500 font-medium text-sm">Loading evaluation scorecard...</p>
                 </div>
                 <Footer />
             </div>
@@ -114,8 +116,9 @@ export default function InterviewReport() {
         return (
             <div className="min-h-screen flex flex-col bg-slate-50">
                 <Navbar />
-                <div className="flex-1 flex items-center justify-center">
-                    <p className="text-slate-500 font-medium">Generating detailed scorecard...</p>
+                <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                    <Spinner size="lg" color="emerald" />
+                    <p className="text-slate-500 font-medium text-sm">Generating detailed scorecard...</p>
                 </div>
                 <Footer />
             </div>

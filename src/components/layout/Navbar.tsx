@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
 import { useInterviewStore } from '@/store/interviewStore'
 import { useMe } from '@/hooks/useAuth'
+import { toast } from 'sonner'
 
 export default function Navbar() {
     const location = useLocation()
@@ -19,6 +20,7 @@ export default function Navbar() {
         resetSession()
         logout()
         queryClient.clear()
+        toast.info('Logged out successfully')
         navigate('/')
     }
 

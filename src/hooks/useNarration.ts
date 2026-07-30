@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 // ~130 words/minute reading pace, clamped so short lines don't flash by
 // and long ones don't stall forever when voice is off/unsupported.
@@ -22,6 +22,7 @@ export function useNarration(voiceEnabled: boolean): UseNarrationReturn {
     const onDoneRef = useRef<(() => void) | null>(null)
 
     const clearPending = useCallback(() => {
+        onDoneRef.current = null
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current)
             timeoutRef.current = null
@@ -66,10 +67,10 @@ export function useNarration(voiceEnabled: boolean): UseNarrationReturn {
     )
 
     const skip = useCallback(() => {
-        clearPending()
-        setIsNarrating(false)
         const done = onDoneRef.current
         onDoneRef.current = null
+        clearPending()
+        setIsNarrating(false)
         done?.()
     }, [clearPending])
 
@@ -77,5 +78,8 @@ export function useNarration(voiceEnabled: boolean): UseNarrationReturn {
         return () => clearPending()
     }, [clearPending])
 
-    return { isNarrating, isVoiceSupported, narrate, skip }
-}
+    return useMemo(
+        () => ({ isNarrating, isVoiceSupported, narrate, skip }),
+        [isNarrating, isVoiceSupported, narrate, skip],
+    )
+}

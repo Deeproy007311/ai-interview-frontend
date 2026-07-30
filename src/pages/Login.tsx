@@ -1,12 +1,9 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
-import Navbar from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
 import { loginSchema, type LoginFormValues } from '@/schemas/auth.schema'
 import { useLogin } from '@/hooks/useAuth'
-import { getErrorMessage } from '@/api/client'
+import Spinner from '@/components/ui/Spinner'
 
 export default function Login() {
     const navigate = useNavigate()
@@ -23,11 +20,7 @@ export default function Login() {
     const onSubmit = (values: LoginFormValues) => {
         loginMutation.mutate(values, {
             onSuccess: () => {
-                toast.success('Welcome back!')
                 navigate('/')
-            },
-            onError: (err) => {
-                toast.error(getErrorMessage(err))
             },
         })
     }
@@ -36,9 +29,21 @@ export default function Login() {
         <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white">
             <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none -z-10 h-full w-full" />
 
-            <Navbar />
+            <main className="flex-1 mx-auto max-w-md w-full px-4 sm:px-6 py-12 flex flex-col justify-center">
+                {/* Brand Logo Header */}
+                <div className="text-center mb-6">
+                    <Link to="/" className="inline-flex items-center gap-2.5 group">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 text-white font-bold shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 3a7 7 0 0 0-7 7c0 3.866 3.134 7 7 7s7-3.134 7-7a7 7 0 0 0-7-7zm-1 3.5a1 1 0 0 1 2 0v3.25l2.25 1.3a1 1 0 0 1-1 1.732l-2.75-1.588A1 1 0 0 1 11 11.5V8.5z" />
+                            </svg>
+                        </div>
+                        <span className="text-2xl font-bold tracking-tight text-slate-900">
+                            Interview<span className="text-indigo-600">AI</span>
+                        </span>
+                    </Link>
+                </div>
 
-            <main className="flex-1 mx-auto max-w-md w-full px-4 sm:px-6 py-16 flex flex-col justify-center">
                 <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl space-y-6">
                     <div className="text-center space-y-1">
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 text-2xl mx-auto border border-indigo-100 mb-2">
@@ -78,9 +83,16 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={loginMutation.isPending}
-                            className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50 active:scale-[0.98] mt-2"
+                            className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all disabled:opacity-60 active:scale-[0.98] mt-2 flex items-center justify-center gap-2"
                         >
-                            {loginMutation.isPending ? 'Logging in...' : 'Sign In →'}
+                            {loginMutation.isPending ? (
+                                <>
+                                    <Spinner size="sm" color="white" />
+                                    <span>Signing in...</span>
+                                </>
+                            ) : (
+                                'Sign In →'
+                            )}
                         </button>
                     </form>
 
@@ -92,8 +104,6 @@ export default function Login() {
                     </p>
                 </div>
             </main>
-
-            <Footer />
         </div>
     )
 }

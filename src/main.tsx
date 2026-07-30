@@ -13,7 +13,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <App />
-        <Toaster theme="dark" position="top-center" richColors />
+        <Toaster position="top-right" richColors closeButton />
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

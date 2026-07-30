@@ -1,5 +1,6 @@
 import { type UseFormRegister, type FieldErrors } from 'react-hook-form'
 import type { AnswerFormValues } from '@/schemas/interview.schema'
+import Spinner from '@/components/ui/Spinner'
 
 interface AnswerPanelProps {
     isAnswering: boolean
@@ -108,7 +109,11 @@ export default function AnswerPanel({
                                                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                                     }`}
                                 >
-                                    <span>{isTranscribing ? '⏳' : '🎙️'}</span>
+                                    {isTranscribing ? (
+                                        <Spinner size="xs" color="indigo" />
+                                    ) : (
+                                        <span>🎙️</span>
+                                    )}
                                     <span>
                                         {isTranscribing
                                             ? 'Transcribing...'
@@ -130,16 +135,21 @@ export default function AnswerPanel({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full rounded-xl bg-white border border-slate-300 py-3 text-sm font-bold text-slate-900 shadow-xs transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.99] disabled:opacity-50 mt-1"
+                            className="w-full rounded-xl bg-white border border-slate-300 py-3 text-sm font-bold text-slate-900 shadow-xs transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.99] disabled:opacity-60 mt-1 flex items-center justify-center gap-2"
                         >
-                            {isSubmitting ? 'Evaluating answer...' : 'Submit answer'}
+                            {isSubmitting ? (
+                                <>
+                                    <Spinner size="sm" color="slate" />
+                                    <span>Evaluating answer...</span>
+                                </>
+                            ) : (
+                                'Submit answer'
+                            )}
                         </button>
                     </form>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-2">
-                        <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 animate-pulse">
-                            ⏳
-                        </div>
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3">
+                        <Spinner size="lg" color="indigo" />
                         <p className="text-xs font-medium text-slate-500">
                             Waiting for AI interviewer to finish question...
                         </p>
