@@ -8,6 +8,7 @@ interface InterviewerAvatarProps {
     subtitle: SubtitleState
     isTransitioning: boolean
     onSkip: () => void
+    onReplay?: () => void
 }
 
 export default function InterviewerAvatar({
@@ -15,6 +16,7 @@ export default function InterviewerAvatar({
     subtitle,
     isTransitioning,
     onSkip,
+    onReplay,
 }: InterviewerAvatarProps) {
     return (
         <div className="relative flex flex-1 flex-col items-center justify-between p-4 sm:p-8 overflow-y-auto bg-slate-950 text-white select-none">
@@ -198,7 +200,22 @@ export default function InterviewerAvatar({
                                 {!subtitle.kind && 'Interviewer Dialogue'}
                             </span>
                         </div>
-                        <span className="text-[11px] text-slate-500 font-mono">CC Subtitles</span>
+                        <div className="flex items-center gap-3">
+                            {subtitle.kind === 'question' && onReplay && (
+                                <button
+                                    type="button"
+                                    onClick={onReplay}
+                                    className="flex items-center gap-1.5 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-800/60 px-2.5 py-0.5 rounded-md"
+                                    title="Repeat question audio"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                    </svg>
+                                    <span>Repeat Question</span>
+                                </button>
+                            )}
+                            <span className="text-[11px] text-slate-500 font-mono">CC Subtitles</span>
+                        </div>
                     </div>
 
                     <div className="min-h-[3rem] flex items-center justify-center text-center">

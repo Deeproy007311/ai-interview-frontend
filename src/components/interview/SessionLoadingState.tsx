@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 
 interface SessionLoadingStateProps {
-    kind: 'loading' | 'error' | 'cancelled' | 'preparing' | 'generating_report' | 'stale_session'
+    kind: 'loading' | 'error' | 'cancelled' | 'preparing' | 'generating_report' | 'stale_session' | 'resuming'
     errorMessage?: string
     isServerWakingUp?: boolean
 }
@@ -55,7 +55,17 @@ export default function SessionLoadingState({
             </div>
         )
     }
-
+    if (kind === 'resuming') {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 text-slate-900 p-6 text-center space-y-2">
+                <div className="h-12 w-12 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
+                <h2 className="text-xl font-bold text-slate-900">Resuming Your Interview</h2>
+                <p className="text-slate-600 text-sm max-w-sm">
+                    Restoring your session, please wait a moment...
+                </p>
+            </div>
+        )
+    }
     if (kind === 'stale_session') {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 text-slate-900 p-6 text-center">
