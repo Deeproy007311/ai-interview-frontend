@@ -1,12 +1,15 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import InterviewCard from '@/components/interview/InterviewCard'
+import DeleteAccountModal from '@/components/profile/DeleteAccountModal'
 import { useInterviews } from '@/hooks/useInterview'
 import { useMe } from '@/hooks/useAuth'
 import { useMyResume } from '@/hooks/useResume'
 
 export default function Dashboard() {
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const { data: user } = useMe()
     const { data: interviews, isLoading, error } = useInterviews()
     const { data: resume } = useMyResume()
@@ -252,10 +255,66 @@ export default function Dashboard() {
                         </div>
                     )}
                 </div>
+
+                {/* ── Account Settings & Danger Zone ── */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5">
+                        <div>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold mb-1">
+                                ⚙️ Account Management
+                            </div>
+                            <h2 className="text-xl font-bold text-slate-900">Profile & Security Settings</h2>
+                            <p className="text-slate-500 text-xs sm:text-sm">Manage your candidate identity and account data</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        {/* Profile Info Summary */}
+                        <div className="space-y-2.5 rounded-2xl bg-slate-50 p-5 border border-slate-200/80">
+                            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Signed In As</div>
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold text-sm shadow-xs">
+                                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                                <div className="truncate">
+                                    <p className="text-sm font-bold text-slate-900">{user?.name || 'User Profile'}</p>
+                                    <p className="text-xs text-slate-500 truncate">{user?.email || 'Registered Candidate'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Danger Zone Box */}
+                        <div className="rounded-2xl border border-red-200/80 bg-red-50/40 p-5 space-y-3 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center gap-2 text-red-700 font-bold text-sm">
+                                    <span>⚠️</span> Danger Zone
+                                </div>
+                                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                                    Permanently delete your profile, interviews, responses, audio logs, and uploaded resumes.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsDeleteModalOpen(true)}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-red-700 transition-all active:scale-[0.98] self-start"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Delete Account & Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </main>
 
             {/* Standardized Footer across all pages */}
             <Footer />
+
+            {/* Modal for Deleting Account */}
+            <DeleteAccountModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+            />
         </div>
     )
 }

@@ -112,6 +112,11 @@ export interface MeResponse {
     user: User
 }
 
+export interface DeleteProfileResponse {
+    success: true
+    message: string
+}
+
 export interface ResumeUploadResponse {
     success: true
     message: string

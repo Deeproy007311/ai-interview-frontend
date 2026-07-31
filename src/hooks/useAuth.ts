@@ -1,7 +1,9 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { registerUser, loginUser, getMe, type RegisterPayload, type LoginPayload } from '@/api/auth'
+import { registerUser, loginUser, getMe, deleteUserProfile, type RegisterPayload, type LoginPayload } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
+import { useInterviewStore } from '@/store/interviewStore'
 import { getErrorMessage } from '@/api/client'
 
 export function useRegister() {
@@ -46,5 +48,26 @@ export function useMe() {
             return res.user
         },
         enabled: !!token,
+    })
+}
+
+export function useDeleteProfile() {
+    const navigate = useNavigate()
+    const queryClient = useQueryClient()
+    const logout = useAuthStore((s) => s.logout)
+    const resetSession = useInterviewStore((s) => s.reset)
+
+    return useMutation({
+        mutationFn: () => deleteUserProfile(),
+        onSuccess: (data) => {
+            resetSession()
+            logout()
+            queryClient.clear()
+            toast.success(data.message || 'Account deleted successfully')
+            navigate('/')
+        },
+        onError: (err) => {
+            toast.error(getErrorMessage(err))
+        },
     })
 }

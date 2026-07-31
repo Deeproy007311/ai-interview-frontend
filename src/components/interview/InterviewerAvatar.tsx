@@ -76,7 +76,7 @@ export default function InterviewerAvatar({
                             {[60, 100, 45, 90, 70].map((h, i) => (
                                 <div
                                     key={i}
-                                    style={{ animationDelay: `${i * 0.15}s` }}
+                                    style={{ height: `${h}%`, animationDelay: `${i * 0.15}s` }}
                                     className="w-0.5 bg-indigo-500 rounded-full animate-pulse"
                                 />
                             ))}
