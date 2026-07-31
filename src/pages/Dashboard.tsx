@@ -8,6 +8,8 @@ import { useInterviews } from '@/hooks/useInterview'
 import { useMe } from '@/hooks/useAuth'
 import { useMyResume } from '@/hooks/useResume'
 
+import { ActiveSessionSkeleton } from '@/components/ui/Skeleton'
+
 export default function Dashboard() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const { data: user } = useMe()
@@ -59,9 +61,11 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* ── Active Session Alert Banner (if any) ── */}
-                {activeInterview && (
-                    <div className="relative rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-500 to-blue-600 p-6 text-white shadow-lg overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* ── Active Session Alert Banner / Skeleton ── */}
+                {isLoading ? (
+                    <ActiveSessionSkeleton />
+                ) : activeInterview ? (
+                    <div className="relative rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-500 to-blue-600 p-6 text-white shadow-lg overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in duration-300">
                         <div className="flex items-center gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md text-2xl shrink-0">
                                 🎙️
@@ -85,7 +89,7 @@ export default function Dashboard() {
                             Resume Session →
                         </Link>
                     </div>
-                )}
+                ) : null}
 
                 {/* ── Stats Widget Grid ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

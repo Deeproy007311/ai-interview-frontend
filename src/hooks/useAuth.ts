@@ -8,12 +8,18 @@ import { getErrorMessage } from '@/api/client'
 
 export function useRegister() {
     const setToken = useAuthStore((s) => s.setToken)
+    const setUser = useAuthStore((s) => s.setUser)
+    const queryClient = useQueryClient()
 
     return useMutation({
         mutationFn: (payload: RegisterPayload) => registerUser(payload),
         onSuccess: (data) => {
             toast.success('Account created successfully!')
             setToken(data.accessToken)
+            if (data.user) {
+                setUser(data.user)
+                queryClient.setQueryData(['me'], data.user)
+            }
         },
         onError: (err) => {
             toast.error(getErrorMessage(err))
@@ -23,12 +29,18 @@ export function useRegister() {
 
 export function useLogin() {
     const setToken = useAuthStore((s) => s.setToken)
+    const setUser = useAuthStore((s) => s.setUser)
+    const queryClient = useQueryClient()
 
     return useMutation({
         mutationFn: (payload: LoginPayload) => loginUser(payload),
         onSuccess: (data) => {
             toast.success('Welcome back!')
             setToken(data.accessToken)
+            if (data.user) {
+                setUser(data.user)
+                queryClient.setQueryData(['me'], data.user)
+            }
         },
         onError: (err) => {
             toast.error(getErrorMessage(err))

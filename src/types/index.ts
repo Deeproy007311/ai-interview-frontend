@@ -105,6 +105,7 @@ export interface FeedbackReport {
 // Auth endpoints return { accessToken } with no `success` wrapper
 export interface AuthResponse {
     accessToken: string
+    user?: User
 }
 
 export interface MeResponse {

@@ -33,14 +33,33 @@ export function useSpeechRecognition({
     onResult,
     onError,
 }: UseSpeechRecognitionOptions): UseSpeechRecognitionReturn {
-    const SpeechRecognitionCtor =
-        typeof window !== 'undefined'
-            ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-            : null
+    const win = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>) : null
+    const SpeechRecognitionCtor = win
+        ? (win.SpeechRecognition as new () => {
+              continuous: boolean
+              interimResults: boolean
+              lang: string
+              onresult: ((event: { results: ArrayLike<{ isFinal: boolean; [index: number]: { transcript: string } }> }) => void) | null
+              onerror: ((event: { error: string }) => void) | null
+              onend: (() => void) | null
+              start: () => void
+              stop: () => void
+          }) ||
+          (win.webkitSpeechRecognition as new () => {
+              continuous: boolean
+              interimResults: boolean
+              lang: string
+              onresult: ((event: { results: ArrayLike<{ isFinal: boolean; [index: number]: { transcript: string } }> }) => void) | null
+              onerror: ((event: { error: string }) => void) | null
+              onend: (() => void) | null
+              start: () => void
+              stop: () => void
+          })
+        : null
     const isSupported = !!SpeechRecognitionCtor
 
     const [isListening, setIsListening] = useState(false)
-    const recognitionRef = useRef<any>(null)
+    const recognitionRef = useRef<InstanceType<NonNullable<typeof SpeechRecognitionCtor>> | null>(null)
     const shouldListenRef = useRef(false)
     const retryCountRef = useRef(0)
     const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -83,6 +102,8 @@ export function useSpeechRecognition({
         }
     }, [])
 
+    const startListeningRef = useRef<() => void>(() => {})
+
     const startListening = useCallback(() => {
         if (!isSupported || !SpeechRecognitionCtor) return
 
@@ -94,7 +115,7 @@ export function useSpeechRecognition({
             recognition.interimResults = true
             recognition.lang = 'en-US'
 
-            recognition.onresult = (event: any) => {
+            recognition.onresult = (event: { results: ArrayLike<{ isFinal: boolean; [index: number]: { transcript: string } }> }) => {
                 retryCountRef.current = 0
                 let currentFinal = ''
                 let currentInterim = ''
@@ -118,7 +139,7 @@ export function useSpeechRecognition({
                 }
             }
 
-            recognition.onerror = (event: any) => {
+            recognition.onerror = (event: { error: string }) => {
                 const error = event.error
                 const isFatalError =
                     error === 'not-allowed' ||
@@ -159,7 +180,7 @@ export function useSpeechRecognition({
                                     : sessionFinalTextRef.current
                                 sessionFinalTextRef.current = ''
                             }
-                            startListening()
+                            startListeningRef.current()
                         }
                     }, 500)
                 } else {
@@ -179,7 +200,7 @@ export function useSpeechRecognition({
                                     : sessionFinalTextRef.current
                                 sessionFinalTextRef.current = ''
                             }
-                            startListening()
+                            startListeningRef.current()
                         }
                     }, 250)
                 } else {
@@ -195,7 +216,7 @@ export function useSpeechRecognition({
                 clearRestartTimeout()
                 restartTimeoutRef.current = setTimeout(() => {
                     if (shouldListenRef.current) {
-                        startListening()
+                        startListeningRef.current()
                     }
                 }, 500)
             } else {
@@ -203,6 +224,10 @@ export function useSpeechRecognition({
             }
         }
     }, [isSupported, SpeechRecognitionCtor, cleanupRecognition, clearRestartTimeout])
+
+    useEffect(() => {
+        startListeningRef.current = startListening
+    }, [startListening])
 
     const start = useCallback((initialText?: string) => {
         if (!isSupported) return

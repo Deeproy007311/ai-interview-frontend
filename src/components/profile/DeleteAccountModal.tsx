@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useDeleteProfile } from '@/hooks/useAuth'
 import Spinner from '@/components/ui/Spinner'
 
@@ -10,6 +11,36 @@ interface DeleteAccountModalProps {
 export default function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps) {
     const [confirmText, setConfirmText] = useState('')
     const { mutate: deleteAccount, isPending } = useDeleteProfile()
+
+    // Reset state when modal closes
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
+    if (isOpen !== prevIsOpen) {
+        setPrevIsOpen(isOpen)
+        if (!isOpen) {
+            setConfirmText('')
+        }
+    }
+
+    // Handle scroll locking & ESC key press for modal accessibility
+    useEffect(() => {
+        if (!isOpen) return
+
+        const originalOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !isPending) {
+                onClose()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+
+        return () => {
+            document.body.style.overflow = originalOverflow
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [isOpen, isPending, onClose])
 
     if (!isOpen) return null
 
@@ -33,9 +64,9 @@ export default function DeleteAccountModal({ isOpen, onClose }: DeleteAccountMod
 
     const isConfirmed = confirmText.trim() === 'DELETE'
 
-    return (
+    return createPortal(
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/60 backdrop-blur-xs overflow-y-auto transition-opacity duration-200"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-slate-950/65 backdrop-blur-sm overflow-y-auto transition-all animate-in fade-in duration-200"
             onClick={handleClose}
             role="dialog"
             aria-modal="true"
@@ -43,7 +74,7 @@ export default function DeleteAccountModal({ isOpen, onClose }: DeleteAccountMod
         >
             {/* Modal Card */}
             <div
-                className="relative w-full max-w-lg my-auto overflow-hidden rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-red-100 transform transition-all animate-in zoom-in-95 duration-150"
+                className="relative w-full max-w-lg my-auto overflow-hidden rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-red-100 transform transition-all animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Background red gradient accent */}
@@ -135,6 +166,8 @@ export default function DeleteAccountModal({ isOpen, onClose }: DeleteAccountMod
                     </form>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
+

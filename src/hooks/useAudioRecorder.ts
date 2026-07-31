@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { transcribeAudio } from '@/api/transcription'
 import { getErrorMessage } from '@/api/client'
 
@@ -48,8 +48,10 @@ export function useAudioRecorder({
     const onTranscribedRef = useRef(onTranscribed)
     const onErrorRef = useRef(onError)
 
-    onTranscribedRef.current = onTranscribed
-    onErrorRef.current = onError
+    useEffect(() => {
+        onTranscribedRef.current = onTranscribed
+        onErrorRef.current = onError
+    }, [onTranscribed, onError])
 
     const cleanupStream = useCallback(() => {
         streamRef.current?.getTracks().forEach((track) => track.stop())

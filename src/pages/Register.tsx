@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from 'react-router-dom'
@@ -8,6 +9,7 @@ import Spinner from '@/components/ui/Spinner'
 export default function Register() {
     const navigate = useNavigate()
     const registerMutation = useRegister()
+    const [registerStageText, setRegisterStageText] = useState('Creating account...')
 
     const {
         register,
@@ -17,16 +19,38 @@ export default function Register() {
         resolver: zodResolver(registerSchema),
     })
 
+    // Dynamic micro-feedback during registration backend processing
+    useEffect(() => {
+        if (!registerMutation.isPending) {
+            return
+        }
+
+        const timer0 = setTimeout(() => setRegisterStageText('Initializing credentials...'), 0)
+        const timer1 = setTimeout(() => setRegisterStageText('Setting up candidate profile...'), 700)
+        const timer2 = setTimeout(() => setRegisterStageText('Preparing workspace...'), 1500)
+
+        return () => {
+            clearTimeout(timer0)
+            clearTimeout(timer1)
+            clearTimeout(timer2)
+        }
+    }, [registerMutation.isPending])
+
     const onSubmit = (values: RegisterFormValues) => {
         registerMutation.mutate(values, {
             onSuccess: () => {
-                navigate('/')
+                navigate('/dashboard')
             },
         })
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white">
+        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white relative">
+            {/* Top progress bar indicator during submission */}
+            {registerMutation.isPending && (
+                <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-600 animate-pulse z-50 shadow-sm" />
+            )}
+
             <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none -z-10 h-full w-full" />
 
             <main className="flex-1 mx-auto max-w-md w-full px-4 sm:px-6 py-12 flex flex-col justify-center">
@@ -44,7 +68,7 @@ export default function Register() {
                     </Link>
                 </div>
 
-                <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl space-y-6">
+                <div className={`bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl space-y-6 transition-all duration-300 ${registerMutation.isPending ? 'ring-2 ring-indigo-500/30' : ''}`}>
                     <div className="text-center space-y-1">
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 text-2xl mx-auto border border-indigo-100 mb-2">
                             🚀
@@ -61,8 +85,9 @@ export default function Register() {
                             <input
                                 {...register('name')}
                                 type="text"
+                                disabled={registerMutation.isPending}
                                 placeholder="Alex Rivera"
-                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100 transition-all"
                             />
                             {errors.name && <p className="text-xs text-red-500 font-semibold">{errors.name.message}</p>}
                         </div>
@@ -74,8 +99,9 @@ export default function Register() {
                             <input
                                 {...register('email')}
                                 type="email"
+                                disabled={registerMutation.isPending}
                                 placeholder="developer@example.com"
-                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100 transition-all"
                             />
                             {errors.email && <p className="text-xs text-red-500 font-semibold">{errors.email.message}</p>}
                         </div>
@@ -87,8 +113,9 @@ export default function Register() {
                             <input
                                 {...register('password')}
                                 type="password"
+                                disabled={registerMutation.isPending}
                                 placeholder="Minimum 6 characters"
-                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100 transition-all"
                             />
                             {errors.password && <p className="text-xs text-red-500 font-semibold">{errors.password.message}</p>}
                         </div>
@@ -96,12 +123,12 @@ export default function Register() {
                         <button
                             type="submit"
                             disabled={registerMutation.isPending}
-                            className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all disabled:opacity-60 active:scale-[0.98] mt-2 flex items-center justify-center gap-2"
+                            className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 transition-all disabled:opacity-75 active:scale-[0.98] mt-2 flex items-center justify-center gap-2"
                         >
                             {registerMutation.isPending ? (
                                 <>
-                                    <Spinner size="sm" color="white" />
-                                    <span>Creating account...</span>
+                                    <Spinner size="sm" className="text-white" />
+                                    <span className="animate-pulse">{registerStageText}</span>
                                 </>
                             ) : (
                                 'Create Free Account →'
