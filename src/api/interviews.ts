@@ -23,6 +23,8 @@ export interface CreateInterviewPayload {
 export interface AnswerPayload {
     questionId: string
     transcript: string
+    /** Signal to the backend that the session timer has expired. */
+    isTimedOut?: boolean
 }
 
 export async function createInterview(
@@ -57,5 +59,10 @@ export async function submitAnswer(
 
 export async function generateReport(id: string): Promise<ReportResponse> {
     const res = await apiClient.post<ReportResponse>(`/api/interviews/${id}/report`)
+    return res.data
+}
+
+export async function deleteInterview(id: string): Promise<{ success: boolean; message: string }> {
+    const res = await apiClient.delete<{ success: boolean; message: string }>(`/api/interviews/${id}`)
     return res.data
 }

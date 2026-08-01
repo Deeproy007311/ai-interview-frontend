@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import SessionHeader from '@/components/interview/SessionHeader'
 import InterviewerAvatar from '@/components/interview/InterviewerAvatar'
 import AnswerPanel from '@/components/interview/AnswerPanel'
 import SessionLoadingState from '@/components/interview/SessionLoadingState'
+import LeaveInterviewModal from '@/components/interview/LeaveInterviewModal'
 
 import { answerSchema, type AnswerFormValues } from '@/schemas/interview.schema'
-import { useInterview, useStartInterview, useSubmitAnswer, useGenerateReport } from '@/hooks/useInterview'
+import { useInterview, useStartInterview, useSubmitAnswer, useGenerateReport, useDeleteInterview } from '@/hooks/useInterview'
 import { useMe } from '@/hooks/useAuth'
 import { useInterviewStore } from '@/store/interviewStore'
 import { useUIStore } from '@/store/uiStore'
@@ -30,6 +31,7 @@ export default function InterviewSession() {
     const startMutation = useStartInterview()
     const answerMutation = useSubmitAnswer()
     const reportMutation = useGenerateReport()
+    const deleteMutation = useDeleteInterview()
 
     const storedInterviewId = useInterviewStore((s) => s.interviewId)
     const phase = useInterviewStore((s) => s.phase)
@@ -46,11 +48,22 @@ export default function InterviewSession() {
     const sessionMatchesThisInterview = sessionBelongsHere && phase !== 'idle'
 
     const [voiceEnabled, setVoiceEnabled] = useState(true)
+    const [showLeaveModal, setShowLeaveModal] = useState(false)
+    // Seed elapsed time from startedAt so the timer is always accurate even
+    // after the user navigates away and returns to an in-progress interview.
     const [elapsedSeconds, setElapsedSeconds] = useState(0)
     const [subtitle, setSubtitle] = useState<{ kind: SubtitleKind; text: string }>({
         kind: null,
         text: '',
     })
+
+    // Seed elapsed from real startedAt whenever the interview data loads or
+    // changes (covers both first load and resumption after navigation).
+    useEffect(() => {
+        if (!interview?.startedAt) return
+        const seeded = Math.max(0, Math.floor((Date.now() - new Date(interview.startedAt).getTime()) / 1000))
+        setElapsedSeconds(seeded)
+    }, [interview?.startedAt])
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -258,13 +271,27 @@ export default function InterviewSession() {
         }
     }, [phase, audioRecorder])
 
+    const isTimeUp =
+        !!interview?.duration &&
+        interview.duration > 0 &&
+        elapsedSeconds >= interview.duration * 60
+
     const onSubmitAnswer = (values: AnswerFormValues) => {
         if (!id || !currentQuestion) return
         if (audioRecorder.isRecording) {
             audioRecorder.stop()
         }
         answerMutation.mutate(
-            { id, payload: { questionId: currentQuestion.id, transcript: values.transcript } },
+            {
+                id,
+                payload: {
+                    questionId: currentQuestion.id,
+                    transcript: values.transcript,
+                    // Tell the backend time is up — it will skip follow-ups and
+                    // force-complete the interview after evaluating this answer.
+                    isTimedOut: isTimeUp,
+                },
+            },
             {
                 onSuccess: () => resetForm(),
                 onError: (err) => toast.error(getErrorMessage(err)),
@@ -359,6 +386,8 @@ export default function InterviewSession() {
                     totalQuestions={totalQuestions}
                     section={currentQuestion?.section}
                     elapsedSeconds={elapsedSeconds}
+                    targetDurationMinutes={interview.duration}
+                    onExitRequest={() => setShowLeaveModal(true)}
                 />
 
                 {/* Split View Body */}
@@ -418,14 +447,35 @@ export default function InterviewSession() {
                     </button>
 
                     {/* Leave Interview Button */}
-                    <Link
-                        to="/dashboard"
+                    <button
+                        type="button"
+                        onClick={() => setShowLeaveModal(true)}
                         className="inline-flex items-center justify-center px-4 py-2 text-xs sm:text-sm font-semibold text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 bg-white hover:bg-red-50 rounded-full shadow-xs transition-all active:scale-95 ml-2"
                     >
                         Leave interview
-                    </Link>
+                    </button>
                 </div>
             </div>
+
+            {/* Leave / Delete confirmation modal */}
+            <LeaveInterviewModal
+                isOpen={showLeaveModal}
+                isDeleting={deleteMutation.isPending}
+                onCancel={() => setShowLeaveModal(false)}
+                onConfirm={() => {
+                    if (!id) return
+                    deleteMutation.mutate(id, {
+                        onSuccess: () => {
+                            toast.success('Interview deleted.')
+                            navigate('/dashboard', { replace: true })
+                        },
+                        onError: (err) => {
+                            toast.error(getErrorMessage(err))
+                            setShowLeaveModal(false)
+                        },
+                    })
+                }}
+            />
         </div>
     )
 }

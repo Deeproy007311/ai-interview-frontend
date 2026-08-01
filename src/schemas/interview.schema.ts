@@ -12,7 +12,7 @@ export const createInterviewSchema = z
         duration: z
             .number({ message: 'Duration is required' })
             .min(5, 'Minimum duration is 5 minutes')
-            .max(120, 'Maximum duration is 120 minutes'),
+            .max(30, 'Maximum duration is 30 minutes'),
         resume: z.string().optional(),
         experienceLevel: z.enum(experienceLevelValues).optional(),
     })

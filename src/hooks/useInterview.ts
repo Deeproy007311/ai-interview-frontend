@@ -6,6 +6,7 @@ import {
     startInterview,
     submitAnswer,
     generateReport,
+    deleteInterview,
     type CreateInterviewPayload,
     type AnswerPayload,
 } from '@/api/interviews'
@@ -70,6 +71,19 @@ export function useGenerateReport() {
     return useMutation({
         mutationFn: (id: string) => generateReport(id),
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['interviews'] })
+        },
+    })
+}
+
+export function useDeleteInterview() {
+    const resetSession = useInterviewStore((s) => s.reset)
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (id: string) => deleteInterview(id),
+        onSuccess: (_res, id) => {
+            resetSession()
+            queryClient.removeQueries({ queryKey: ['interviews', id] })
             queryClient.invalidateQueries({ queryKey: ['interviews'] })
         },
     })
